@@ -1,0 +1,30 @@
+/* ============================================================
+   Ejemplo 1 – Gramática de expresiones aritméticas
+   Tokens: ID PLUS TIMES LPAREN RPAREN WS
+   ============================================================ */
+
+%token ID
+%token PLUS
+%token TIMES
+%token LPAREN RPAREN
+%token WS
+
+IGNORE WS
+
+%%
+
+/* Producciones */
+expr:
+    expr PLUS term
+    | term
+    ;
+
+term:
+    term TIMES factor
+    | factor
+    ;
+
+factor:
+    LPAREN expr RPAREN
+    | ID
+    ;

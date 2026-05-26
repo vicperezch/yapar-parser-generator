@@ -1,0 +1,15 @@
+# Cadenas de prueba para la gramática aritmética (arithmetic.yalp)
+# Formato: tokens separados por espacio (modo standalone)
+# Líneas que inician con # son comentarios
+
+# Cadenas válidas
+ID PLUS ID
+ID TIMES ID PLUS ID
+LPAREN ID PLUS ID RPAREN TIMES ID
+ID
+
+# Cadenas inválidas (errores sintácticos)
+PLUS ID
+ID ID
+LPAREN RPAREN
+ID PLUS
