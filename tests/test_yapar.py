@@ -36,7 +36,7 @@ def test_yalp_lexer_tokens():
     assert "COLON" in types
     assert "SEMICOLON" in types
     assert "EOF" in types
-    print("  ✓ test_yalp_lexer_tokens")
+    print("  Correct: test_yalp_lexer_tokens")
 
 
 # Verifica que los comentarios sean ignorados por el lexer.
@@ -50,7 +50,7 @@ def test_yalp_lexer_comments():
 
     assert "PERCENT_TOKEN" in types
     assert len([t for t in types if t == "UPPER_ID"]) == 2
-    print("  ✓ test_yalp_lexer_comments")
+    print("  Correct: test_yalp_lexer_comments")
 
 
 # Comprueba la estructura general de la gramática.
@@ -64,7 +64,7 @@ def test_parse_grammar_structure():
     assert "term" in grammar.non_terminals
     assert "factor" in grammar.non_terminals
     assert "WS" in grammar.ignored
-    print("  ✓ test_parse_grammar_structure")
+    print("  Correct: test_parse_grammar_structure")
 
 
 # Verifica la cantidad de producciones cargadas.
@@ -73,7 +73,7 @@ def test_parse_productions_count():
 
     # La gramática aritmética contiene seis producciones.
     assert len(grammar.productions) == 6
-    print("  ✓ test_parse_productions_count")
+    print("  Correct: test_parse_productions_count")
 
 
 # Comprueba FIRST para símbolos terminales.
@@ -85,7 +85,7 @@ def test_first_terminals():
     # FIRST de un terminal es el propio terminal.
     assert first["ID"] == {"ID"}
     assert first["PLUS"] == {"PLUS"}
-    print("  ✓ test_first_terminals")
+    print("  Correct: test_first_terminals")
 
 
 # Comprueba FIRST para símbolos no terminales.
@@ -99,7 +99,7 @@ def test_first_nonterminals():
     assert "LPAREN" in first["expr"]
     assert "ID" in first["factor"]
     assert "LPAREN" in first["factor"]
-    print("  ✓ test_first_nonterminals")
+    print("  Correct: test_first_nonterminals")
 
 
 # Verifica FOLLOW del símbolo inicial.
@@ -112,7 +112,7 @@ def test_follow_start_symbol():
     # El símbolo inicial debe contener EOF en FOLLOW.
     assert EOF_MARKER in follow["expr"]
     assert "PLUS" in follow["term"] or "TIMES" in follow["term"]
-    print("  ✓ test_follow_start_symbol")
+    print("  Correct: test_follow_start_symbol")
 
 
 # Comprueba la construcción básica del autómata LR(0).
@@ -123,7 +123,7 @@ def test_lr0_automaton_states():
     assert len(automaton.states) > 0
     assert automaton.initial_state is not None
     assert automaton.initial_state.id == 0
-    print(f"  ✓ test_lr0_automaton_states ({len(automaton.states)} estados)")
+    print(f"  Correct: test_lr0_automaton_states ({len(automaton.states)} estados)")
 
 
 # Verifica que exista el ítem inicial aumentado.
@@ -135,7 +135,7 @@ def test_lr0_initial_item():
     # El estado inicial debe contener S' → · expr.
     items_str = [str(i) for i in initial.items]
     assert any("S'" in s for s in items_str), f"No S' item found: {items_str}"
-    print("  ✓ test_lr0_initial_item")
+    print("  Correct: test_lr0_initial_item")
 
 
 # Verifica que la tabla SLR(1) no tenga conflictos.
@@ -145,10 +145,10 @@ def test_slr_table_no_conflicts():
     table = build_slr_table(automaton)
 
     if table.has_conflicts():
-        print(f"  ⚠ Conflictos: {table.conflicts}")
+        print(f"  Conflictos: {table.conflicts}")
 
     assert not table.has_conflicts(), f"Conflictos inesperados: {table.conflicts}"
-    print("  ✓ test_slr_table_no_conflicts")
+    print("  Correct: test_slr_table_no_conflicts")
 
 
 # Verifica la existencia de un único estado de aceptación.
@@ -164,7 +164,7 @@ def test_slr_table_has_accept():
     ]
 
     assert len(accept_states) == 1, f"Accept states: {accept_states}"
-    print(f"  ✓ test_slr_table_has_accept (estado {accept_states[0]})")
+    print(f"  Correct: test_slr_table_has_accept (estado {accept_states[0]})")
 
 
 # Construye un evaluador listo para las pruebas.
@@ -181,7 +181,7 @@ def test_evaluator_accepts_valid():
     evaluator, ignored = _get_evaluator()
     result = evaluator.evaluate(["ID", "PLUS", "ID"], ignored=ignored, trace=False)
     assert result.accepted, f"Debería aceptar: {result.message}"
-    print("  ✓ test_evaluator_accepts_valid (ID PLUS ID)")
+    print("  Correct: test_evaluator_accepts_valid (ID PLUS ID)")
 
 
 # Verifica que una expresión compleja sea aceptada.
@@ -190,7 +190,7 @@ def test_evaluator_accepts_complex():
     tokens = ["LPAREN", "ID", "PLUS", "ID", "RPAREN", "TIMES", "ID"]
     result = evaluator.evaluate(tokens, ignored=ignored, trace=False)
     assert result.accepted, f"Debería aceptar: {result.message}"
-    print("  ✓ test_evaluator_accepts_complex ((ID PLUS ID) TIMES ID)")
+    print("  Correct: test_evaluator_accepts_complex ((ID PLUS ID) TIMES ID)")
 
 
 # Verifica que una secuencia inválida sea rechazada.
@@ -198,7 +198,7 @@ def test_evaluator_rejects_invalid():
     evaluator, ignored = _get_evaluator()
     result = evaluator.evaluate(["PLUS", "ID"], ignored=ignored, trace=False)
     assert not result.accepted, "Debería rechazar PLUS ID"
-    print("  ✓ test_evaluator_rejects_invalid (PLUS ID)")
+    print("  Correct: test_evaluator_rejects_invalid (PLUS ID)")
 
 
 # Verifica que una expresión incompleta sea rechazada.
@@ -206,7 +206,7 @@ def test_evaluator_rejects_incomplete():
     evaluator, ignored = _get_evaluator()
     result = evaluator.evaluate(["ID", "PLUS"], ignored=ignored, trace=False)
     assert not result.accepted, "Debería rechazar ID PLUS (incompleto)"
-    print("  ✓ test_evaluator_rejects_incomplete (ID PLUS)")
+    print("  Correct: test_evaluator_rejects_incomplete (ID PLUS)")
 
 
 # Ejecuta todas las pruebas sin usar pytest.
@@ -241,7 +241,7 @@ if __name__ == "__main__":
             test()
             passed += 1
         except Exception as e:
-            print(f"  ✗ {test.__name__}: {e}")
+            print(f"  Error: {test.__name__}: {e}")
             failed += 1
 
     print(f"\n  Resultado: {passed} passed, {failed} failed")

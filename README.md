@@ -125,7 +125,7 @@ El sistema requiere de 3 archivos principales para funcionar en conjunto:
 ### 📤 Outputs (¿Qué devuelve el programa?)
 1. **La Tabla y los Cálculos en la Consola**: Imprime los conjuntos FIRST, FOLLOW y dibuja la matriz de la Tabla SLR(1) (con acciones de shift/reduce).
 2. **La Traza Paso a Paso**: Imprime cómo la pila va evaluando cada cadena ingresada.
-3. **El Reporte de Resultados (`output/parse_results.txt`)**: Archivo de texto limpio indicando únicamente si la cadena fue `ACCEPTED ✓` o detalla el `SYNTAX ERROR ✗`.
+3. **El Reporte de Resultados (`output/parse_results.txt`)**: Archivo de texto limpio indicando únicamente si la cadena fue `ACCEPTED ` o detalla el `SYNTAX ERROR`.
 4. **El Autómata Visual (`output/lr0_automaton.png`)**: Un grafo estático (imagen) donde cada nodo es un estado con sus ítems LR(0) y las transiciones etiquetadas.
 
 ---

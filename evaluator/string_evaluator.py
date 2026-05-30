@@ -24,7 +24,7 @@ class ParseResult:
     error_state: int | None = None
 
     def __str__(self) -> str:
-        status = "ACCEPTED ✓" if self.accepted else f"SYNTAX ERROR ✗"
+        status = "ACCEPTED" if self.accepted else f"SYNTAX ERROR"
         return f"{status} — {self.message}"
 
 
