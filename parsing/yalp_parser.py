@@ -206,7 +206,7 @@ def parse_yalp(file_path: str, token_table: Optional[dict] = None) -> Grammar:
         token_table: tabla de tokens del Módulo 1 (opcional)
     """
     with open(file_path, "r", encoding="utf-8") as fh:
-        text = fh.read()
+        text = fh.read().lstrip('\ufeff')
 
     lexer = YalpLexer(text)
     tokens = lexer.tokenize()

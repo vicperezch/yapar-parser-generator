@@ -160,7 +160,7 @@ def main():
         sys.exit(1)
 
     with open(args.input, "r", encoding="utf-8") as fh:
-        lines = [l.rstrip("\n") for l in fh if l.strip() and not l.strip().startswith("#")]
+        lines = [l.lstrip('\ufeff').rstrip("\n") for l in fh if l.strip().lstrip('\ufeff') and not l.strip().lstrip('\ufeff').startswith("#")]
 
     evaluator = StringEvaluator(slr_table, aug_grammar)
     ignore_set = grammar.ignored

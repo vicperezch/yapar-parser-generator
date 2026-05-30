@@ -9,7 +9,7 @@ def _format_item(item: LR0Item) -> str:
     symbols = list(item.rhs)
     symbols.insert(item.dot, "·")
     rhs_str = " ".join(symbols) if symbols else "·"
-    return f"{item.lhs} → {rhs_str}"
+    return f"{item.lhs} -> {rhs_str}"
 
 
 # Genera la etiqueta de texto para un estado del autómata.
