@@ -1,0 +1,22 @@
+/* Gramática LALR(1) pero no SLR(1) */
+
+%token A
+%token C
+%token D
+%token Z
+
+%%
+
+s:
+    A a C
+    | A b D
+    | b C
+    ;
+
+a:
+    Z
+    ;
+
+b:
+    Z
+    ;

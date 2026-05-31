@@ -1,6 +1,6 @@
 # YAPar – Yet Another Parser Generator
 
-> Generador de analizadores sintácticos SLR(1) para el curso CC3071 – Diseño de Lenguajes de Programación  
+> Generador de analizadores sintácticos SLR(1) y LALR(1) para el curso CC3071 – Diseño de Lenguajes de Programación  
 > Universidad del Valle de Guatemala
 
 ---
@@ -10,24 +10,30 @@
 ```
 yapar-parser-generator/
 │
-├── main.py                        # Punto de entrada principal
+├── main.py
 ├── yalex_adapter.py               # Módulo 1 – Puente con YALex
 ├── requirements.txt
 │
 ├── parsing/                       # Módulo 2 – Parser YAPar
 │   ├── __init__.py
 │   ├── yalp_lexer.py              #   Tokenizador de archivos .yalp
-│   └── yalp_parser.py             #   Parser → Grammar estructurada
+│   └── yalp_parser.py
 │
-├── grammar/                       # Módulo 3 – Autómata LR(0)
+├── grammar/                       # Módulo 3 – Autómatas LR(0) y LALR(1)
 │   ├── __init__.py
-│   ├── lr0_items.py               #   LR0Item, LR0State, LR0Automaton
-│   ├── first_follow.py            #   FIRST y FOLLOW
-│   └── lr0_builder.py             #   CLOSURE, GOTO, construcción canónica
+│   ├── lr0_items.py
+│   ├── lr1_items.py
+│   ├── first_follow.py
+│   ├── lr0_builder.py             #   CLOSURE, GOTO, construcción canónica
+│   └── lalr_builder.py            #   Colección LR(1) + fusión por núcleo
 │
 ├── slr/                           # Módulo 4 – Tabla SLR(1)
 │   ├── __init__.py
-│   └── slr_table.py               #   ACTION + GOTO, detección de conflictos
+│   └── slr_table.py
+│
+├── lalr/                          # Módulo 4b – Tabla LALR(1)
+│   ├── __init__.py
+│   └── lalr_table.py
 │
 ├── visualizer/                    # Módulo 5 – Visualizador
 │   ├── __init__.py
@@ -35,14 +41,14 @@ yapar-parser-generator/
 │
 ├── evaluator/                     # Módulo 6 – Evaluador de cadenas
 │   ├── __init__.py
-│   └── string_evaluator.py        #   Simulación LR con pila + trazas
+│   └── string_evaluator.py
 │
-├── examples/                      # Gramáticas y cadenas de prueba
+├── examples/
 │   ├── arithmetic.yalp
 │   ├── production_example.yalp
 │   └── cadenas_aritmetica.txt
 │
-└── output/                        # Salidas generadas (creado automáticamente)
+└── output/                        # Salidas generadas
     ├── lr0_automaton.png
     └── parse_results.txt
 ```
@@ -110,19 +116,20 @@ python3 main.py examples/arithmetic.yalp \
 
 | `--no-png` | Omite la generación del PNG |
 | `--entrypoint` | Nombre del método tokenizador del lexer (default: `token`) |
+| `--method` | Método de construcción de la tabla: `slr` o `lalr` (default: `slr`) |
 
 ---
 
 ## Entradas y Salidas del Sistema
 
-### 📥 Inputs (¿Qué recibe el programa?)
+### Inputs
 El sistema requiere de 3 archivos principales para funcionar en conjunto:
 
 1. **El archivo de la Gramática (`.yalp`)**: Es como el manual de reglas de sintaxis. Define exactamente *cómo* se pueden combinar las palabras para que la oración (cadena) sea correcta.
 2. **El archivo de Tokens Léxicos (`.yal`)**: Es el diccionario. Le dice al programa cómo reconocer las "letras" o "palabras" base (por ejemplo, que el símbolo `+` significa `PLUS`, o que `123` significa `ID`). *Nota: El programa invoca a YALex automáticamente en el fondo usando este archivo.*
 3. **El archivo de Pruebas (`.txt`)**: Es el examen final. Contiene las oraciones que quieres evaluar. El programa las lee y, usando el diccionario (YALex) y las reglas gramaticales (YAPar), las califica como válidas o inválidas.
 
-### 📤 Outputs (¿Qué devuelve el programa?)
+### Outputs
 1. **La Tabla y los Cálculos en la Consola**: Imprime los conjuntos FIRST, FOLLOW y dibuja la matriz de la Tabla SLR(1) (con acciones de shift/reduce).
 2. **La Traza Paso a Paso**: Imprime cómo la pila va evaluando cada cadena ingresada.
 3. **El Reporte de Resultados (`output/parse_results.txt`)**: Archivo de texto limpio indicando únicamente si la cadena fue `ACCEPTED ` o detalla el `SYNTAX ERROR`.
@@ -158,6 +165,11 @@ El proyecto está organizado en 6 módulos secuenciales que interactúan de la s
 - **Recibe**: Autómata LR(0) + conjuntos FOLLOW.
 - **Produce**: Dos tablas: `ACTION[estado][terminal]` y `GOTO[estado][no_terminal]`.
 - **Responsabilidades**: Llenar la matriz basándose en la lógica SLR(1). Detectar errores de colisión (Shift/Reduce o Reduce/Reduce).
+
+### Módulo 4b — Constructor de la tabla LALR(1)
+- **Recibe**: Gramática estructurada del Módulo 2.
+- **Produce**: Las tablas `ACTION` y `GOTO`, con la misma estructura que SLR(1).
+- **Responsabilidades**: Construir la colección canónica LR(1) (ítems con lookahead) y luego **fusionar los estados cuyo núcleo LR(0) coincide**, uniendo sus lookaheads. Las acciones reduce se colocan con el lookahead preciso de cada ítem (un subconjunto de FOLLOW), lo que elimina conflictos que SLR(1) no puede resolver. Se activa con `--method lalr`; el visualizador anota los lookaheads en cada ítem (`A → α·β , {a b}`).
 
 ### Módulo 5 — Visualizador del autómata
 - **Recibe**: Autómata LR(0) del Módulo 3.

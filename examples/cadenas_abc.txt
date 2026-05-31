@@ -1,0 +1,11 @@
+# Cadenas válidas
+A Z C
+A Z D
+Z C
+
+# Cadenas inválidas (errores sintácticos)
+Z D
+A Z
+Z
+A Z C C
+Z C D
