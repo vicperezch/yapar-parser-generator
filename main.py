@@ -4,9 +4,11 @@ import sys
 
 from parsing.yalp_parser import parse_yalp
 from grammar.lr0_builder import build_lr0_automaton
+from grammar.lalr_builder import build_lalr_automaton
 from grammar.first_follow import compute_first, compute_follow
 from slr.slr_table import build_slr_table
-from visualizer.automaton_renderer import render_automaton_png
+from lalr.lalr_table import build_lalr_table
+from visualizer.automaton_renderer import render_automaton_png, _node_label_lalr
 from evaluator.string_evaluator import StringEvaluator, print_parse_trace
 from yalex_adapter import invoke_yalex, load_generated_lexer, tokenize_with_lexer, tokenize_simple
 
@@ -24,7 +26,7 @@ def _sep(title: str = "", width: int = 60):
 def main():
     parser = argparse.ArgumentParser(
         prog="yapar",
-        description="YAPar – Generador de Analizadores Sintácticos SLR(1)",
+        description="YAPar – Generador de Analizadores Sintácticos SLR(1) / LALR(1)",
     )
     parser.add_argument("grammar", help="Archivo .yalp con la gramática")
     parser.add_argument("-l", "--lexer", help="Archivo .yal de YALex (opcional)")
@@ -33,6 +35,7 @@ def main():
     parser.add_argument("--no-png", action="store_true", help="Omitir generación PNG")
     parser.add_argument("--lexer-py", help="Ruta al lexer .py ya generado por YALex")
     parser.add_argument("--entrypoint", default="token", help="Entrypoint del lexer")
+    parser.add_argument("--method", choices=["slr", "lalr"], default="slr", help="Método de construcción de la tabla")
     args = parser.parse_args()
 
     if not os.path.exists(args.grammar):
@@ -84,48 +87,61 @@ def main():
     grammar = parse_yalp(args.grammar)
     grammar.print_summary()
 
-    # Construye el autómata LR(0) y calcula FIRST/FOLLOW.
-    _sep("FASE 3 – Autómata LR(0)")
+    is_lalr = args.method == "lalr"
+    method_name = "LALR(1)" if is_lalr else "SLR(1)"
+
+    # Construye el autómata y calcula FIRST/FOLLOW.
+    automaton_name = "LALR" if is_lalr else "LR(0)"
+    _sep(f"FASE 3 – Autómata {automaton_name}")
     print("  Construyendo gramática aumentada y colecciones canónicas...")
 
-    automaton = build_lr0_automaton(grammar)
+    if is_lalr:
+        automaton = build_lalr_automaton(grammar)
+    else:
+        automaton = build_lr0_automaton(grammar)
     aug_grammar = automaton._grammar  # type: ignore[attr-defined]
 
     print(f"  {automaton}")
 
     first = compute_first(aug_grammar)
-    follow = compute_follow(aug_grammar, first)
 
     print("\n  FIRST:")
     for nt in sorted(aug_grammar.non_terminals):
         print(f"    FIRST({nt}) = {sorted(first.get(nt, set()))}")
 
-    print("\n  FOLLOW:")
-    for nt in sorted(aug_grammar.non_terminals):
-        print(f"    FOLLOW({nt}) = {sorted(follow.get(nt, set()))}")
+    # FOLLOW solo es relevante para SLR(1).
+    if not is_lalr:
+        follow = compute_follow(aug_grammar, first)
+        print("\n  FOLLOW:")
+        for nt in sorted(aug_grammar.non_terminals):
+            print(f"    FOLLOW({nt}) = {sorted(follow.get(nt, set()))}")
 
-    # Genera la tabla SLR(1).
-    _sep("FASE 4 – Tabla SLR(1)")
-    slr_table = build_slr_table(automaton)
+    # Genera la tabla de parsing.
+    _sep(f"FASE 4 – Tabla {method_name}")
+    table = build_lalr_table(automaton) if is_lalr else build_slr_table(automaton)
 
-    if slr_table.has_conflicts():
+    if table.has_conflicts():
         print("  Conflictos detectados:")
-        for c in slr_table.conflicts:
+        for c in table.conflicts:
             print(f"    {c}")
     else:
-        print("  No se detectaron conflictos SLR(1).")
+        print(f"  No se detectaron conflictos {method_name}.")
 
     print()
 
     # Imprime la tabla usando la gramática original.
-    slr_table.print_table(grammar, ignored=grammar.ignored)
+    table.print_table(grammar, ignored=grammar.ignored)
 
     # Genera la visualización del autómata.
     _sep("FASE 5 – Visualizador")
 
     if not args.no_png:
         png_path = os.path.join(args.output, "lr0_automaton.png")
-        result_png = render_automaton_png(automaton, png_path)
+        label_fn = _node_label_lalr if is_lalr else None
+        if label_fn:
+            result_png = render_automaton_png(automaton, png_path, label_fn)
+        else:
+            result_png = render_automaton_png(automaton, png_path)
 
         if result_png:
             print(f"  PNG generado: {result_png}")
@@ -147,7 +163,7 @@ def main():
     with open(args.input, "r", encoding="utf-8") as fh:
         lines = [l.lstrip('\ufeff').rstrip("\n") for l in fh if l.strip().lstrip('\ufeff') and not l.strip().lstrip('\ufeff').startswith("#")]
 
-    evaluator = StringEvaluator(slr_table, aug_grammar)
+    evaluator = StringEvaluator(table, aug_grammar)
     ignore_set = grammar.ignored
 
     results_path = os.path.join(args.output, "parse_results.txt")

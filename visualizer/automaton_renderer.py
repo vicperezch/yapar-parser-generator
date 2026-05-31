@@ -20,8 +20,21 @@ def _node_label(state: LR0State) -> str:
     return "\n".join(lines)
 
 
+# Genera la etiqueta de un estado LALR agrupando lookaheads por núcleo.
+def _node_label_lalr(state) -> str:
+    lookaheads: dict = {}
+    for item in state.items:
+        lookaheads.setdefault(item.core, set()).add(item.lookahead)
+
+    lines = [f"Estado {state.id}"]
+    for core in sorted(lookaheads, key=lambda c: (c.lhs, str(c))):
+        las = " ".join(sorted(lookaheads[core]))
+        lines.append(f"{_format_item(core)} , {{{las}}}")
+    return "\n".join(lines)
+
+
 # Genera una imagen PNG del autómata LR(0).
-def render_automaton_png(automaton: LR0Automaton, output_path: str) -> str:
+def render_automaton_png(automaton: LR0Automaton, output_path: str, label_fn=_node_label) -> str:
     try:
         import pydot  # type: ignore
     except ImportError:
@@ -54,7 +67,7 @@ def render_automaton_png(automaton: LR0Automaton, output_path: str) -> str:
     graph.add_edge(pydot.Edge("__start__", f"s{automaton.initial_state.id}"))
 
     for state in automaton.states:
-        label = _node_label(state)
+        label = label_fn(state)
 
         # Resalta visualmente el estado inicial.
         fillcolor = "#45475a" if state.id == automaton.initial_state.id else "#313244"
