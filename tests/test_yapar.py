@@ -7,7 +7,9 @@ from parsing.yalp_parser import parse_yalp, Grammar, Production
 from grammar.first_follow import compute_first, compute_follow, EOF_MARKER
 from grammar.lr0_builder import build_lr0_automaton, augment_grammar
 from grammar.lr0_items import LR0Item
+from grammar.lalr_builder import build_lalr_automaton
 from slr.slr_table import build_slr_table
+from lalr.lalr_table import build_lalr_table
 from evaluator.string_evaluator import StringEvaluator
 
 
@@ -209,6 +211,82 @@ def test_evaluator_rejects_incomplete():
     print("  Correct: test_evaluator_rejects_incomplete (ID PLUS)")
 
 
+# Comprueba la construcción del autómata LALR(1).
+def test_lalr_automaton_states():
+    grammar = get_grammar()
+    automaton = build_lalr_automaton(grammar)
+
+    assert len(automaton.states) > 0
+    assert automaton.initial_state is not None
+    assert automaton.initial_state.id == 0
+    print(f"  Correct: test_lalr_automaton_states ({len(automaton.states)} estados)")
+
+
+# El autómata LALR debe tener el mismo número de estados que el LR(0).
+def test_lalr_same_states_as_lr0():
+    grammar = get_grammar()
+    lr0 = build_lr0_automaton(grammar)
+    lalr = build_lalr_automaton(grammar)
+
+    assert len(lalr.states) == len(lr0.states)
+    print(f"  Correct: test_lalr_same_states_as_lr0 ({len(lalr.states)} estados)")
+
+
+# Verifica que la tabla LALR(1) no tenga conflictos.
+def test_lalr_table_no_conflicts():
+    grammar = get_grammar()
+    automaton = build_lalr_automaton(grammar)
+    table = build_lalr_table(automaton)
+
+    if table.has_conflicts():
+        print(f"  Conflictos: {table.conflicts}")
+
+    assert not table.has_conflicts(), f"Conflictos inesperados: {table.conflicts}"
+    print("  Correct: test_lalr_table_no_conflicts")
+
+
+# Construye un evaluador LALR listo para las pruebas.
+def _get_lalr_evaluator():
+    grammar = get_grammar()
+    automaton = build_lalr_automaton(grammar)
+    table = build_lalr_table(automaton)
+    aug = automaton._grammar
+    return StringEvaluator(table, aug), grammar.ignored
+
+
+# Verifica el reconocimiento de cadenas con el parser LALR(1).
+def test_lalr_evaluator_accepts_and_rejects():
+    evaluator, ignored = _get_lalr_evaluator()
+
+    valid = evaluator.evaluate(["ID", "PLUS", "ID"], ignored=ignored, trace=False)
+    assert valid.accepted, f"Debería aceptar: {valid.message}"
+
+    complex_tokens = ["LPAREN", "ID", "PLUS", "ID", "RPAREN", "TIMES", "ID"]
+    accepted = evaluator.evaluate(complex_tokens, ignored=ignored, trace=False)
+    assert accepted.accepted, f"Debería aceptar: {accepted.message}"
+
+    invalid = evaluator.evaluate(["PLUS", "ID"], ignored=ignored, trace=False)
+    assert not invalid.accepted, "Debería rechazar PLUS ID"
+    print("  Correct: test_lalr_evaluator_accepts_and_rejects")
+
+
+# Los lookaheads de reduce LALR deben ser subconjunto de FOLLOW (más precisos que SLR).
+def test_lalr_lookaheads_subset_of_follow():
+    grammar = get_grammar()
+    automaton = build_lalr_automaton(grammar)
+    aug = automaton._grammar
+    first = compute_first(aug)
+    follow = compute_follow(aug, first)
+
+    for state in automaton.states:
+        for item in state.items:
+            if item.is_complete and item.lhs != "S'":
+                assert item.lookahead in follow[item.lhs], (
+                    f"Lookahead {item.lookahead} fuera de FOLLOW({item.lhs})"
+                )
+    print("  Correct: test_lalr_lookaheads_subset_of_follow")
+
+
 # Ejecuta todas las pruebas sin usar pytest.
 if __name__ == "__main__":
     print("\n" + "="*50)
@@ -231,6 +309,11 @@ if __name__ == "__main__":
         test_evaluator_accepts_complex,
         test_evaluator_rejects_invalid,
         test_evaluator_rejects_incomplete,
+        test_lalr_automaton_states,
+        test_lalr_same_states_as_lr0,
+        test_lalr_table_no_conflicts,
+        test_lalr_evaluator_accepts_and_rejects,
+        test_lalr_lookaheads_subset_of_follow,
     ]
 
     passed = 0
